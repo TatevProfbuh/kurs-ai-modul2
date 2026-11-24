@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>AI-ИНСТРУМЕНТЫ для учеников</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* Макет: журнальный учебник ТАТЕВ — слева оглавление с прогрессом, справа урок из раскрывающихся блоков,
+   промпты на графите, кнопки на официальные сайты. Сознательно один светлый образ — фирменная бумага. */
+:root{
+  --milk:#F4EEE9; --paper:#FBF8F5; --band:#E9DFD6; --ink:#2E2A28; --muted:#6B625C;
+  --line:rgba(46,42,40,.16); --terra:#C56245; --terra-deep:#A64D34; --terra-soft:rgba(197,98,69,.10); --terra-light:#EBA88C;
+  --blue:#7FAEC6; --blue-soft:rgba(127,174,198,.22); --code-fg:#F4EEE9; --white:#FFFDFB;
+  --serif:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --sans:"Manrope","Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--milk);color:var(--ink);font:400 17px/1.6 var(--sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 70px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--milk)}
+a{color:var(--ink);text-decoration-color:var(--terra);text-decoration-thickness:2px;text-underline-offset:3px}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--terra);outline-offset:3px}
+p{margin:0;text-wrap:pretty}
+h1,h2,h3{text-wrap:balance;margin:0}
+.wrap{max-width:1180px;margin:0 auto}
+
+.run{display:flex;flex-wrap:wrap;gap:6px 24px;padding-block:22px 14px;border-bottom:1px solid var(--line);font-size:.75rem}
+.run strong{letter-spacing:.12em;text-transform:uppercase}
+.run span{color:var(--muted)}
+
+/* обложка модуля */
+.cover{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:28px 56px;align-items:end;padding-block:clamp(28px,6vw,64px) 34px;border-bottom:1px solid var(--line)}
+.rubrics{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.rubric{padding:6px 12px;font:800 .72rem/1 var(--sans);letter-spacing:.16em;text-transform:uppercase}
+.rubric.t{background:var(--terra);color:var(--milk)}
+.rubric.b{background:var(--blue);color:var(--ink)}
+.cover h1{font:600 clamp(2.8rem,7vw,5rem)/1 var(--serif);letter-spacing:-.01em;margin-bottom:16px}
+.cover h1 em,.lh h2 em{font-style:italic;color:var(--terra)}
+.lede{font-size:1.15rem;line-height:1.5;max-width:36em}
+.meter{display:grid;gap:10px;padding:20px 22px;background:var(--white);border-top:2px solid var(--ink)}
+.meter b{font:600 2.6rem/1 var(--serif);color:var(--terra);font-variant-numeric:lining-nums}
+.meter span{font-size:.85rem;color:var(--muted)}
+.mbar{height:8px;background:var(--band);overflow:hidden}
+.mbar i{display:block;height:100%;width:0;background:var(--terra);transition:width .8s cubic-bezier(.22,1,.36,1)}
+.dates{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.85rem}
+.dates b{font:inherit;font-weight:800;color:var(--ink)}
+
+.grid{display:grid;grid-template-columns:250px minmax(0,1fr);gap:44px;align-items:start;margin-top:30px}
+.grid>*{min-width:0}
+
+/* оглавление */
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column}
+nav.toc .sep{font:800 .66rem/1.3 var(--sans);text-transform:uppercase;letter-spacing:.16em;color:var(--muted);padding:16px 0 6px}
+nav.toc .sep:first-child{padding-top:0}
+nav.toc button{display:grid;grid-template-columns:46px 1fr 20px;gap:6px;align-items:baseline;text-align:left;border:0;border-top:1px solid var(--line);background:none;padding:11px 0}
+nav.toc .no{font:800 1.05rem/1 var(--sans);color:var(--terra);font-variant-numeric:tabular-nums}
+nav.toc .nm{font-size:.9rem;font-weight:600;line-height:1.3}
+nav.toc .ok{width:16px;height:16px;border:1.5px solid var(--line);align-self:center;display:grid;place-content:center}
+nav.toc .ok.on{background:var(--terra);border-color:var(--terra)}
+nav.toc .ok.on::after{content:"";width:8px;height:5px;border:solid var(--milk);border-width:0 0 2px 2px;transform:rotate(-45deg) translate(1px,-1px)}
+nav.toc button:hover .nm{color:var(--terra)}
+nav.toc button[aria-current="true"] .nm{color:var(--terra);font-weight:800}
+nav.toc button[aria-current="true"]{box-shadow:inset 3px 0 0 var(--terra);padding-left:10px}
+
+/* урок */
+main{min-width:0}
+.lh{display:grid;gap:14px;padding-bottom:24px;border-bottom:1px solid var(--line)}
+.lh h2{font:600 clamp(2.2rem,5vw,3.6rem)/1.02 var(--serif)}
+.can{background:var(--blue-soft);padding:14px 18px;font-size:1rem;max-width:44em}
+.can b{font-weight:800}
+.need{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.85rem;color:var(--muted)}
+.chip{font:600 .78rem var(--mono);background:var(--band);color:var(--ink);padding:3px 9px}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.tbtn{border:1px solid var(--ink);background:transparent;padding:8px 14px;font:700 .82rem var(--sans);min-height:38px}
+.tbtn:hover{background:var(--band)}
+
+/* блоки урока */
+.blocks{display:grid;margin-top:6px}
+.blk{border-bottom:1px solid var(--line);animation:rise .6s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i,0) * 70ms)}
+@keyframes rise{from{transform:translateY(14px)}to{transform:none}}
+.bh{width:100%;display:grid;grid-template-columns:76px minmax(0,1fr) 32px;gap:14px;align-items:center;border:0;background:none;text-align:left;padding:22px 0}
+.bh .bn{font:800 2.1rem/1 var(--sans);color:var(--terra);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.bh h3{font:600 clamp(1.45rem,2.6vw,1.9rem)/1.15 var(--serif)}
+.bh small{display:block;font:500 .85rem/1.4 var(--sans);color:var(--muted);margin-top:4px}
+.bh .pm{width:30px;height:30px;border:1.5px solid var(--ink);position:relative;transition:background .2s,transform .3s}
+.bh .pm::before,.bh .pm::after{content:"";position:absolute;left:50%;top:50%;width:12px;height:2px;background:var(--ink);transform:translate(-50%,-50%)}
+.bh .pm::after{transform:translate(-50%,-50%) rotate(90deg);transition:transform .3s}
+.blk.open .pm{background:var(--terra);border-color:var(--terra);transform:rotate(180deg)}
+.blk.open .pm::before,.blk.open .pm::after{background:var(--milk)}
+.blk.open .pm::after{transform:translate(-50%,-50%) rotate(0)}
+.bh:hover h3{color:var(--terra)}
+.bb{display:grid;gap:16px;padding:0 0 28px 90px}
+.blk:not(.open) .bb{display:none}
+.blk.open .bb>*{animation:fadein .45s ease both}
+@keyframes fadein{from{transform:translateY(6px)}to{transform:none}}
+.bb p{max-width:66ch}
+.bb ul{margin:0;padding-left:0;list-style:none;display:grid;gap:8px;max-width:66ch}
+.bb ul li{position:relative;padding-left:22px}
+.bb ul li::before{content:"";position:absolute;left:2px;top:.62em;width:8px;height:8px;background:var(--terra)}
+ol.steps{list-style:none;counter-reset:f;margin:0;padding:0;max-width:70ch}
+ol.steps li{counter-increment:f;display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+ol.steps li::before{content:counter(f,decimal-leading-zero);font:800 1rem/1.6 var(--sans);color:var(--terra)}
+.quote{font:italic 600 clamp(1.4rem,2.6vw,1.9rem)/1.25 var(--serif);border-left:3px solid var(--terra);padding-left:16px;max-width:30em}
+
+/* карточки сервисов */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px}
+.card{background:var(--white);border-top:2px solid var(--ink);padding:16px 18px 18px;display:flex;flex-direction:column;gap:8px;transition:transform .25s,box-shadow .25s}
+.card:hover{transform:translateY(-3px);box-shadow:0 14px 26px -18px rgba(46,42,40,.45)}
+.card.t{border-top-color:var(--terra)} .card.b{border-top-color:var(--blue)}
+.card h4{margin:0;font:700 1.05rem/1.3 var(--sans)}
+.card p{font-size:.94rem;color:var(--muted)}
+.tag{align-self:flex-start;font:800 .66rem/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;padding:5px 8px;background:var(--band)}
+.tag.ok{background:var(--blue);color:var(--ink)} .tag.vpn{background:var(--terra);color:var(--milk)}
+.go{margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;gap:8px;font:800 .82rem var(--sans);text-decoration:none;border:1px solid var(--ink);padding:8px 12px;transition:background .2s,color .2s}
+.go::after{content:"↗";transition:transform .2s}
+.go:hover{background:var(--ink);color:var(--milk)}
+.go:hover::after{transform:translate(2px,-2px)}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+
+/* вкладки */
+.tabs{border-top:1px solid var(--ink)}
+.tabs .tl{display:flex;flex-wrap:wrap;gap:0 4px;border-bottom:1px solid var(--line)}
+.tabs .tl button{border:0;background:none;padding:10px 12px 8px;font:800 .72rem var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border-bottom:3px solid transparent;transition:color .2s,border-color .2s}
+.tabs .tl button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--terra)}
+.tabs .tp{padding:12px 0 0;display:grid;gap:8px}
+
+/* промпт */
+.prompt{background:var(--ink);color:var(--code-fg);max-width:780px}
+.prompt .ph{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px 10px 16px;border-bottom:1px solid rgba(244,238,233,.14)}
+.prompt .ph span{font:800 .7rem/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase;padding:6px 10px;background:var(--blue);color:var(--ink)}
+.prompt .ph span.t{background:var(--terra);color:var(--milk)}
+.prompt .ph button{font:700 .82rem var(--sans);color:var(--code-fg);background:transparent;border:1px solid rgba(244,238,233,.45);padding:7px 14px;min-height:38px;transition:background .2s}
+.prompt .ph button:hover{background:rgba(244,238,233,.12)}
+.prompt .ph button.done{background:var(--terra);border-color:var(--terra)}
+.prompt pre{margin:0;padding:14px 16px 18px;white-space:pre-wrap;overflow-wrap:anywhere;font:.86rem/1.6 var(--mono)}
+
+/* заметки */
+.note{background:var(--blue-soft);padding:14px 18px;max-width:72ch}
+.note.t{background:var(--terra-soft)}
+.note .nl{display:flex;align-items:center;gap:9px;font:800 .72rem/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.note .nl::before{content:"";width:9px;height:9px;background:var(--blue)}
+.note.t .nl::before{background:var(--terra)}
+
+/* показать ответ */
+.reveal{border:1px dashed var(--ink);padding:14px 18px;max-width:72ch}
+.reveal button{border:0;background:none;padding:0;font:800 .82rem var(--sans);letter-spacing:.06em;color:var(--terra);text-decoration:underline;text-underline-offset:3px}
+.reveal .ans{margin-top:10px;animation:fadein .4s ease both}
+
+/* таблицы */
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.93rem;min-width:520px}
+th{text-align:left;font:800 .7rem/1.3 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:10px 14px 10px 0;border-bottom:2px solid var(--ink)}
+td{padding:10px 14px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{font-weight:700}
+.tree{font:.88rem/1.75 var(--mono);background:var(--white);border:1px solid var(--line);padding:12px 16px;overflow-x:auto;white-space:pre}
+.tree b{color:var(--terra)}
+code{font-family:var(--mono);font-size:.9em;background:rgba(46,42,40,.07);padding:1px 5px;border-radius:3px}
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border-top:2px solid var(--ink)}
+.split>div{padding:12px 18px 14px 0;min-width:0}
+.split>div+div{border-left:1px solid var(--line);padding-left:18px}
+.split .sl{font:800 .72rem var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--terra);margin-bottom:8px}
+.split .sl.no{color:var(--muted)}
+.flowline{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.flowline span{background:var(--white);border:1.5px solid var(--ink);padding:8px 12px;font-weight:700;font-size:.92rem}
+.flowline span.acc{background:var(--terra);border-color:var(--terra);color:var(--milk)}
+.flowline i{font-style:normal;color:var(--terra);font-weight:800}
+
+/* задание */
+.hw{margin-top:26px;background:var(--white);border-top:2px solid var(--ink);padding:22px 24px 24px;display:grid;gap:14px}
+.hw h3{font:600 1.8rem/1.1 var(--serif)}
+.hw h3 em{color:var(--terra)}
+.check{list-style:none;padding:0;margin:0;display:grid}
+.check li{border-top:1px solid var(--line)}
+.check label{display:flex;gap:14px;align-items:flex-start;padding:11px 0;cursor:pointer}
+.check input{appearance:none;flex:none;width:22px;height:22px;border:1.5px solid var(--ink);margin:2px 0 0;display:grid;place-content:center;cursor:pointer;background:transparent;transition:background .2s}
+.check input:checked{background:var(--terra);border-color:var(--terra)}
+.check input:checked::after{content:"";width:10px;height:6px;border:solid var(--milk);border-width:0 0 2.5px 2.5px;transform:rotate(-45deg) translate(1px,-1px)}
+.check input:checked+span{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--terra)}
+.donebox{border-left:3px solid var(--terra);padding-left:14px}
+.donebox b{color:var(--terra)}
+.finish{justify-self:start;display:inline-flex;align-items:center;gap:10px;border:0;background:var(--terra);color:var(--milk);padding:12px 18px;font:800 .9rem var(--sans);transition:transform .2s,background .2s}
+.finish:hover{transform:translateY(-2px)}
+.finish.on{background:var(--ink)}
+.pager{display:flex;justify-content:space-between;gap:10px;margin-top:24px;padding-top:18px;border-top:2px solid var(--ink);flex-wrap:wrap}
+.btn{border:1px solid var(--ink);background:transparent;padding:10px 16px;font:700 .88rem var(--sans);min-height:42px}
+.btn.primary{background:var(--terra);border-color:var(--terra);color:var(--milk)}
+.btn:hover{transform:translateY(-1px)}
+
+.final{margin-top:40px;padding:clamp(22px,4vw,40px);background:var(--white);border-top:2px solid var(--ink);display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);gap:22px;align-items:end}
+.sig{font:italic 600 2rem/1.1 var(--serif);color:var(--terra)}
+.final p{color:var(--muted);font-size:.95rem}
+.final img{display:block;width:min(100%,220px);height:auto;justify-self:end}
+
+@media (max-width:960px){
+  .cover,.final{grid-template-columns:1fr}
+  .final img{justify-self:start}
+  .grid{grid-template-columns:1fr;gap:18px}
+  nav.toc{position:static;flex-direction:row;overflow-x:auto;gap:14px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  nav.toc .sep{display:none}
+  nav.toc button{min-width:200px;border-top:0;grid-template-columns:38px minmax(0,1fr) 18px}
+  nav.toc button[aria-current="true"]{box-shadow:inset 0 -3px 0 var(--terra);padding-left:0}
+  .bh{grid-template-columns:52px minmax(0,1fr) 32px}
+  .bb{padding-left:0}
+  .split{grid-template-columns:1fr}
+  .split>div+div{border-left:0;padding-left:0;border-top:1px solid var(--line)}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+<style>body{margin:0}</style>
+</head>
+<body>
+<div class="wrap" lang="ru">
+  <div class="run"><strong>ТАТЕВ · AI Мастерская</strong><span>Курс «ИИ для бухгалтера» · материалы модуля 2</span></div>
+
+  <header class="cover">
+    <div>
+      <div class="rubrics"><span class="rubric t">Модуль 2</span><span class="rubric b">5 уроков · 3 ч 02 мин</span></div>
+      <h1>AI-<em>ИНСТРУМЕНТЫ</em></h1>
+      <p class="lede">Вайб-кодинг для бухгалтера: вы ставите задачу — ИИ пишет программу. Калькулятор с КП, обработки, публикация и свой инструмент для клиентов. Показываем на Claude Code и Codex, есть путь без VPN.</p>
+    </div>
+    <div class="meter" aria-live="polite">
+      <b id="mCount">0 из 5</b><span>уроков отмечено пройденными</span>
+      <div class="mbar"><i id="mBar"></i></div>
+      <div class="dates"><span><b>Пт 27.11</b> — разбор черновиков</span><span><b>до Пн 30.11</b> — свой инструмент</span></div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <nav class="toc" id="toc" aria-label="Уроки модуля"></nav>
+    <main id="main"></main>
+  </div>
+
+  <section class="final">
+    <div><p class="sig">Татев Багрян</p><p>Налоговый консультант, эксперт по ИИ и автоматизации бухгалтерского бизнеса. Видео уроков — на платформе курса, здесь — материалы к ним.</p></div>
+    <img src="logo.png" alt="Логотип ТАТЕВ, бухгалтерское агентство" width="600" height="399">
+  </section>
+</div>
+
+<script>
+const P = {
+'5.1':`Сделай калькулятор [стоимости услуг / трудозатрат] для бухгалтерской фирмы. Одна HTML-страница, работает в браузере без установки.
+Входные данные: [поля]. Формулы: [как считать]. Результат: [что показать] и кнопка «Скачать КП в PDF».
+Проверки: пустые поля, ноль, отрицательные значения, округление до рубля.
+Не придумывай налоговые ставки — используй только мои данные.`,
+'5.2':`Вот 8 контрольных примеров с ожидаемым результатом: [таблица].
+Прогони калькулятор по каждому, покажи фактический результат и расхождения. Исправь только найденные ошибки и покажи, что изменилось.`,
+'2.5':`Перепиши текст ниже простым человеческим языком: короткие предложения, без «в целях», «осуществляется», «в рамках». Смысл, сроки и цифры не меняй.
+[текст]`
+};
+const L = {
+ chatgpt:{t:'chatgpt.com',u:'https://chatgpt.com'}, claude:{t:'claude.ai',u:'https://claude.ai'},
+ codex:{t:'openai.com/codex',u:'https://openai.com/codex'}, giga:{t:'giga.chat',u:'https://giga.chat'},
+ deepseek:{t:'chat.deepseek.com',u:'https://chat.deepseek.com'}, github:{t:'github.com',u:'https://github.com'},
+ pages:{t:'pages.github.com',u:'https://pages.github.com'}
+};
+const LESSONS = [
+{id:'l1',no:'2.1',block:'Свой первый инструмент',title:'Вайб-кодинг: ИИ пишет программу',
+ can:'выбрать инструмент — Claude Code, Codex или чат без VPN, — читать команды агента перед тем, как их разрешить, и сделать первую мини-программу по описанию.',
+ need:['Папка «Курс_ИИ» из модуля 1 — в ней создадим «06-Инструменты»','Claude, ChatGPT или GigaChat'],
+ blocks:[
+ {h:'Что такое вайб-кодинг',s:'Вы ставите задачу — ИИ пишет программу',c:[
+  {flow:['Описание словами','ИИ пишет программу','Проверяю','Правлю словами']},
+  {p:'Программа — чаще всего одна HTML-страница, как памятка из урока 1.6: открывается в браузере, ничего не нужно устанавливать. Только теперь внутри поля, кнопки и формулы.'},
+  {cards:[{h:'Калькуляторы',p:'Стоимость услуг, пени, отпускные, сумма с НДС и без, сумма прописью.'},{h:'Сроки и даты',k:'b',p:'Сколько дней до срока, рабочие дни, дата следующего платежа.'},{h:'Памятки и формы',k:'t',p:'Чек-лист документов для клиента, анкета перед КП, сроки отчётности.'}]},
+  {warn:'Правило курса не меняется: агенту даём задачу и описание — какие поля, какие колонки, что считать. Данные клиентов (выписки, реестры, документы) агенту не даём. Программа посчитает их у вас в браузере, а нейросеть их не увидит.'},
+  {quote:'Вы ставите задачу — ИИ пишет программу. Проверка — за вами.'}]},
+ {h:'Три пути: выберите свой',s:'Claude Code, Codex или чат без VPN',c:[
+  {cards:[
+   {h:'Claude Code',tag:'vpn',tg:'VPN + подписка Claude',p:'Агент Claude на компьютере: вкладка Code в приложении Claude. Сам создаёт и правит файлы.',go:'claude'},
+   {h:'Codex',tag:'vpn',tg:'Подписка ChatGPT',p:'Такой же агент у ChatGPT. Подходит, если Claude недоступен. Есть отдельное приложение Codex и раздел Codex в ChatGPT.',go:'codex'},
+   {h:'Без VPN',tag:'ok',tg:'Бесплатно',p:'GigaChat или DeepSeek пишут код в чате, вы сохраняете его в файл .html — как в уроке 1.6.',go:'giga',k:'b'}]},
+  {steps:['Откройте папку <b>«Курс_ИИ»</b> из модуля 1 и создайте в ней шестую подпапку <b>«06-Инструменты»</b>','Claude Code или Codex: выберите именно «06-Инструменты», а не всю «Курс_ИИ»','Перед каждым действием агент спрашивает разрешение. Читайте и разрешайте; непонятно — спросите «что это делает?»']},
+  {tree:'Курс_ИИ/\n├── 01-Обо мне\n├── 02-Файлы помощника\n├── 03-Обезличено\n├── 04-Шаблоны\n├── 05-Результаты\n└── <b>06-Инструменты</b>   ← эту папку открываем агенту'},
+  {warn:'Агент видит всё, что лежит в открытой ему папке, и может это прочитать. В «Курс_ИИ» есть документы, поэтому открываем только «06-Инструменты» — и клиентские файлы туда не кладём.'},
+  {note:'Интерфейсы меняются. Если не нашли Codex в своём приложении — напишите в чат потока, какая у вас система (Mac или Windows) и что видите на экране.'}]},
+ {h:'Консоль: что пишет агент',s:'Команды пишет агент — читаете и разрешаете вы',c:[
+  {p:'В уроке 1.6 вы открыли консоль и написали <code>pwd</code> и <code>ls</code>. В Claude Code и Codex команды пишет агент, а перед выполнением показывает их и спрашивает разрешение. Ваша работа — прочитать команду, прежде чем нажать «разрешить».'},
+  {table:{h:['Команда','Что делает','Разрешать?'],r:[
+   ['<code>pwd</code>','показывает, в какой папке агент','да'],
+   ['<code>ls</code>','список файлов в папке (в PowerShell тоже работает)','да'],
+   ['<code>cd</code> имя','перейти в папку','да, если внутри вашей папки'],
+   ['<code>mkdir</code> имя','создать папку','да'],
+   ['<code>open</code> файл (Mac) / <code>start</code> файл (Windows)','открыть файл в браузере','да'],
+   ['<code>rm</code>, <code>del</code>, <code>Remove-Item</code>','удалить файлы','сначала спросить: что именно и зачем'],
+   ['<code>sudo</code>','действие с правами администратора','сначала спросить'],
+   ['<code>install</code>, <code>brew</code>, <code>npm</code>, <code>pip</code>','установить программу','сначала спросить: что ставим и зачем'],
+   ['команда с ключом или паролем','передаёт секрет','нет']]}},
+  {prompt:{l:'Если команда непонятна',t:'Объясни простыми словами, что делает эта команда и зачем она нужна. Что изменится на моём компьютере, если я её разрешу?'}},
+  {warn:'Кнопку «разрешать всегда» не нажимайте, пока не привыкнете читать команды, — особенно для удаления. Ключи и пароли в чат и в команды не вставляем: они живут в менеджере паролей.'},
+  {note:'Путь без VPN: консоли у вас не будет, файл вы сохраняете сами. Этот блок — чтобы понимать, что делает агент, когда на него пересядете.'}]},
+ {h:'Первая программа: сумма прописью',s:'Пять минут — и инструмент на каждый день',c:[
+  {prompt:{l:'Запрос для Claude Code или Codex',t:'Сделай в этой папке файл summa.html — одну страницу, которая работает в браузере без установки. Поле: сумма в рублях с копейками. Результат: сумма прописью для счёта, например «Двадцать одна тысяча пятьсот рублей 50 копеек». Кнопка «Копировать». Проверь себя на суммах 1 000 001; 21 500,50; 0 и покажи результат.'}},
+  {tabs:{'Claude Code':'<p>Вкладка Code → папка «06-Инструменты» → вставить запрос → прочитать, что агент хочет сделать → разрешить создание файла → открыть summa.html двойным кликом.</p>','Codex':'<p>Та же папка, тот же запрос. Результат похожий: другой агент — тот же принцип.</p>','Без VPN':'<p>В начале запроса: «Сделай одну HTML-страницу…», в конце: «Выдай код целиком одним блоком». Скопируйте код, сохраните как summa.html в «06-Инструменты», откройте.</p>'}},
+  {reveal:{q:'Показать правильные ответы',a:'1 000 001 — «Один миллион один рубль 00 копеек». 21 500,50 — «Двадцать одна тысяча пятьсот рублей 50 копеек». 0 — «Ноль рублей 00 копеек».'}},
+  {note:'Правка словами: где ошибка, что сейчас, как должно быть. «На сумме 21 500 пишет „двадцать один тысяча“, нужно „двадцать одна“» работает лучше, чем «что-то не так».'}]}
+ ],
+ hw:{t:'Свой путь и <em>мини-программа</em>',tasks:['Выбрать путь: Claude Code, Codex или чат без VPN','Создать «06-Инструменты» и сделать в ней мини-программу для своей ежедневной задачи','Проверить её на трёх своих примерах — без данных клиентов'],done:'программа открывается в браузере и правильно работает на трёх примерах.'}},
+
+{id:'l2',no:'2.2',block:'Свой первый инструмент',title:'Калькулятор услуг с КП в PDF',
+ can:'собрать калькулятор стоимости своих услуг по своему прайсу и образцу своего КП, выгрузить КП в PDF и проверить расчёт на своих примерах.',
+ need:['Свой прайс (PDF, Excel или текстом)','Образец своего КП','Логотип, если есть','8 примеров, посчитанных вручную'],
+ blocks:[
+ {h:'Что положить в папку',s:'Агенту — ваши документы, не клиентские',c:[
+  {tree:'Курс_ИИ/\n└── 06-Инструменты/\n    ├── <b>Прайс.pdf</b>        ← ваши цены\n    ├── <b>КП образец.pdf</b>   ← как вы обычно отправляете КП\n    └── <b>logo.png</b>         ← если есть'},
+  {p:'Прайс, образец КП и логотип — ваши документы, их агенту давать можно. Агент прочитает их сам: вам не нужно переписывать цены в запрос.'},
+  {warn:'Агент видит всё, что лежит в папке. Клиентские файлы туда не кладём. Название клиента вводим уже в готовую страницу калькулятора, а не агенту.'}]},
+ {h:'Техзадание',s:'Сначала прайс и образец, потом нейросеть',c:[
+  {ul:['<b>Ввод</b> — ИП или ООО, сотрудники, режим, НДС, дополнительные услуги из прайса','<b>Расчёт</b> — базовый тариф + услуги × количество; разовые услуги отдельно','<b>Результат</b> — расшифровка, итог в месяц, кнопка «Скачать КП в PDF»','<b>КП</b> — по вашему образцу, в том же порядке разделов','<b>Оформление</b> — ваши цвета, шрифты, логотип']},
+  {prompt:{l:'ТЗ: калькулятор по моему прайсу и КП',t:`Сделай в этой папке калькулятор стоимости бухгалтерского обслуживания — файл calc.html, одна страница, работает в браузере без установки и без интернета.
+
+Цены — только из файла «[название файла прайса]» в этой папке. Ничего не придумывай. Если позиция в прайсе непонятна — спроси меня, прежде чем считать.
+
+Ввод:
+— клиент: ИП или ООО; для ИП — с сотрудниками или без;
+— режим налогообложения — как в прайсе;
+— [сопровождение НДС, если есть в прайсе];
+— дополнительные услуги из прайса: [перечислите группы: сотрудники, маркетплейсы, касса, эквайринг, счета, первичка, кадры…];
+— поле «Название клиента» — только для шапки КП.
+
+Расчёт:
+— в месяц = базовый тариф + дополнительные услуги × количество;
+— разовые услуги показывай отдельно, не в месячном итоге;
+— округление до рубля, пустое поле = 0, отрицательные числа не принимай.
+
+Результат на экране: базовый тариф, таблица дополнительных услуг (услуга, цена, количество, сумма), итог в месяц, разовые услуги отдельно.
+
+Кнопка «Скачать КП в PDF». КП собери по образцу «[название файла КП]» из этой папки, в том же порядке разделов. Тексты возьми из образца, цены — из прайса.
+
+Оформление: [ваши цвета HEX и шрифты, или «в стиле образца КП»]; логотип — logo.png из этой папки. Страница удобна на телефоне.
+
+В конце проверь себя на примере: [ваш клиент из реального КП, без названия] — покажи итог в месяц.`}},
+  {warn:'Без строки «цены только из прайса, ничего не придумывай» нейросеть подставит «среднерыночные» цены из интернета.'},
+  {note:'Не знаете, что ещё написать в ТЗ? Попросите агента: «задай мне вопросы по этому ТЗ, прежде чем делать».'}]},
+ {h:'Сборка и правки',s:'Первая версия — не последняя',c:[
+  {steps:['Отдайте ТЗ агенту в папке «06-Инструменты»','Агент попросит прочитать прайс и образец КП — это ваши файлы, разрешайте','Агент задаёт вопрос по прайсу? Отвечайте: значит, он не придумывает','Откройте calc.html и введите клиента из своего настоящего КП — итог должен совпасть','Правки — по одной-две за раз: «итог крупно», «сотрудников — числом», «расшифровку — таблицей»']},
+  {tabs:{'Claude Code':'<p>После правки: «обнови calc.html».</p>','Codex':'<p>Попросите: «покажи, что изменил».</p>','Без VPN':'<p>Чат не видит вашу папку. Прайс — ваш документ: прикрепите его или вставьте цены текстом. Образец КП опишите разделами. Каждая правка — «выдай файл целиком», сохраняете поверх старого.</p>'}}]},
+ {h:'КП в PDF',s:'Клиенту нужен документ',c:[
+  {ul:['Те же разделы и тот же порядок, что в вашем образце','Ваш логотип и контакты','Расчёт: база, дополнительные услуги таблицей, итог в месяц','Цены — из нового прайса, а не из старого образца']},
+  {note:'В старом образце КП могут быть прошлогодние цены. Сверьте пару строк с прайсом: если агент взял цену из образца — «цены только из прайса, исправь».'},
+  {note:'PDF скачивается криво? Попросите: «сделай КП через печать браузера в PDF». Это самый надёжный вариант.'}]},
+ {h:'Проверка на 8 примерах',s:'Без неё калькулятор нельзя отдавать',c:[
+  {table:{h:['Пример','Что вводим','Считаю вручную','Ожидаю'],r:[
+   ['1. Как в реальном КП','клиент из вашего КП','база + услуги × количество','…'],
+   ['2. Минимум','только базовый тариф','',''],
+   ['3. ОСН или НДС','режим с НДС','',''],
+   ['4. ООО','ООО с сотрудниками','',''],
+   ['5. Нулевка','если есть в прайсе','',''],
+   ['6. Поштучно','платёжки, первичка','',''],
+   ['7. Разовая услуга','например, кадровые документы','не в месячном итоге!',''],
+   ['8. Маркетплейс','без НДС и с НДС','','']]}},
+  {pk:'5.2'},
+  {warn:'Примеры считайте сами, до калькулятора. Если попросить ИИ придумать примеры, он проверит сам себя и ошибок не найдёт.'}]}
+ ],
+ hw:{t:'Калькулятор <em>под свой прайс</em>',tasks:['Положить в «06-Инструменты» свой прайс, образец КП и логотип','Сделать калькулятор с кнопкой КП в PDF','Проверить на 8 своих примерах'],done:'все 8 примеров сходятся до рубля, а КП открывается и читается.'}},
+
+{id:'l3',no:'2.3',block:'Свой первый инструмент',title:'Калькуляторы и обработки',
+ can:'понимать, где на самом деле утекают данные клиента; сделать калькулятор режимов на своих ставках; пользоваться готовыми обработками — сверкой банка с АУСН и сводкой ОФД — и переделать их под свою выгрузку, не показывая нейросети ни одной строки с данными.',
+ need:['Ставки и лимиты режимов на свою дату','Готовые обработки ausn.html и ofd.html — скачать ниже','Обезличенный файл для проверки — в «03-Обезличено»'],
+ blocks:[
+ {h:'Калькулятор сравнения режимов',s:'Ставки — только ваши',c:[
+  {prompt:{l:'Запрос: сравнение режимов',t:`Сделай в этой папке калькулятор сравнения налоговых режимов для клиента — файл calc-rezhim.html, одна страница.
+Ввод: выручка за год, расходы за год, фонд оплаты труда, вид деятельности (текст).
+Режимы: УСН 6%, УСН 15%, [другие]. Ставки, лимиты и правила уменьшения налога на взносы — ТОЛЬКО из блока «Мои ставки» ниже, сам не придумывай. Если чего-то не хватает — спроси меня.
+Мои ставки на [дата]: [перечислить].
+Результат: таблица — налог, взносы, итог нагрузки по каждому режиму, лучший выделен. Внизу: «Ставки на [дата]. Это оценка, а не консультация. Для точного расчёта — напишите мне».
+Страница должна работать без интернета: никаких шрифтов, библиотек и счётчиков из сети.
+Проверь себя: выручка [сумма], расходы [сумма], ФОТ [сумма] — покажи расчёт по УСН 6% по шагам.`}},
+  {warn:'Ставки и лимиты берите из Налогового кодекса на дату расчёта. Нейросеть может знать старую редакцию.'},
+  {note:'Один режим всегда проверяйте вручную. Поменялись ставки — «обнови ставки на такие-то».'}]},
+ {h:'Данные клиента и 152-ФЗ',s:'Что считается персональными данными и что запрещено',c:[
+  {p:'<b>Персональные данные</b> — любая информация, по которой можно узнать конкретного человека: ФИО, ИНН физлица, паспорт, СНИЛС, номер счёта, зарплата, телефон.'},
+  {p:'Кажется, что в выписке ООО их нет — там организации. Но посмотрите внимательно:'},
+  {ul:['контрагент-ИП — это физлицо: его ФИО и ИНН — персональные данные;','зарплата сотруднику в назначении платежа — ФИО и сумма;','перевод директора «с личной карты» — тоже;','в чеке ОФД бывают телефон или почта покупателя.']},
+  {p:'Поэтому считаем так: <b>выписка почти всегда содержит персональные данные</b>. Клиент доверил их вам, и вы отвечаете за них вместе с ним.'},
+  {table:{h:['Правило закона','Что это значит для бухгалтера'],r:[
+   ['Передавать данные третьим лицам — только при наличии оснований','Загрузить выписку в чат нейросети = передать данные сторонней компании'],
+   ['Трансграничная передача — заранее уведомить Роскомнадзор','Большинство нейросетей — иностранные серверы. Загрузка файла = передача за границу'],
+   ['Данные граждан РФ хранятся в базах на территории России','Папка с выписками в iCloud, OneDrive, Google Диске — хранение за границей'],
+   ['Штрафы за утечки с 2025 года выросли в разы','Риск несопоставим с парой сэкономленных минут']]}},
+  {note:'Здесь простая картина, а не юридическая консультация. Формулировки 152-ФЗ (ст. 3, 12, 18) и суммы штрафов по КоАП проверяйте на дату работы.'}]},
+ {h:'Где данные на самом деле уходят',s:'Три места и семь дыр',c:[
+  {cards:[
+   {h:'Ваш компьютер',p:'Файл лежит на диске, страница считает в браузере. Данные никуда не уходят — как в Excel с формулами.'},
+   {h:'Сайт (GitHub)',k:'b',p:'Отдаёт только саму страницу — «рецепт». Файл, который вы выбираете кнопкой, сайт не получает.'},
+   {h:'Нейросеть',k:'t',p:'Иностранный сервер. Загрузили выписку в чат — данные ушли за границу. Сюда — только факты словами.'}]},
+  {quote:'Страница — это рецепт. Браузер готовит у вас на кухне. Сайт — только полка, откуда взяли рецепт.'},
+  {p:'Как отличить: посмотрите в адресную строку. <code>file:///…</code> — страница открыта с вашего диска. <code>…github.io</code> — скачана с сайта, но выбранный вами файл всё равно читается на вашем компьютере.'},
+  {table:{h:['Где утекает','Что делаем'],r:[
+   ['Выписку загрузили в чат нейросети','Не загружаем. Агенту — только названия колонок'],
+   ['Агенту открыта папка с выписками','Агенту — только «06-Инструменты», данные — в «03-Обезличено»'],
+   ['Папка синхронизируется с iCloud, OneDrive, Google Диском','Данные клиентов — в папке без зарубежного облака'],
+   ['Расширение браузера «с доступом ко всем сайтам»','Обработки открываем в браузере без лишних расширений'],
+   ['Кнопка «Перевести страницу»','Не нажимаем: текст уходит в сервис перевода'],
+   ['Страница тянет шрифт, библиотеку или счётчик из интернета','В странице «замок» — она не может выйти в интернет'],
+   ['Обработку с данными выложили на сайт','Обработки — только у себя. В интернет — калькуляторы без данных']]}},
+  {tree:'Курс_ИИ/\n├── 03-Обезличено/    ← выписки и выгрузки: агенту НЕ открываем\n└── <b>06-Инструменты/</b>   ← папка агента: только страницы-инструменты'},
+  {warn:'Проверьте облако. Если рабочий стол или «Документы» синхронизируются с iCloud, OneDrive или Google Диском, всё, что там лежит, уже копируется на зарубежные серверы — без всякой нейросети.'}]},
+ {h:'Замок и проверка без интернета',s:'Как убедиться, что данные никуда не ушли',c:[
+  {p:'В начале каждой моей обработки есть строка-<b>замок</b> (<code>Content-Security-Policy</code>). Она запрещает странице любые обращения в интернет: отправить данные, загрузить чужой код, шрифт или картинку нельзя. Даже если кто-то допишет отправку — браузер её заблокирует.'},
+  {steps:['Выключите Wi-Fi','Откройте обработку двойным щелчком — в адресной строке <code>file:///</code>','Загрузите обезличенный файл','Страница посчитала — значит, данные физически никуда не ушли','Включите Wi-Fi обратно']},
+  {note:'Эту же проверку можно показать клиенту, если он спросит, куда уходят его данные.'},
+  {quote:'Агенту — колонки. Файл — только в браузер. Страница — без интернета.'}]},
+ {h:'Готовые обработки',s:'Скачайте и пользуйтесь',c:[
+  {cards:[
+   {h:'Сверка банка и АУСН',p:'Две выгрузки → чего нет в АУСН, чего нет в банке, где признак дохода спорный. Реестр расхождений в Excel.<br><br><a class="go" href="ausn.html" download="ausn.html">Скачать ausn.html</a>'},
+   {h:'Обработка выгрузки ОФД',k:'b',p:'Чеки за месяц → выручка по дням, возвраты, наличные и безналичные. Сводка в Excel.<br><br><a class="go" href="ofd.html" download="ofd.html">Скачать ofd.html</a>'}]},
+  {steps:['Скачайте файл и положите в «Курс_ИИ/06-Инструменты»','Откройте двойным щелчком — он откроется в браузере','Нажмите «Выберите файл» и загрузите выгрузку (.xlsx или .csv) из «03-Обезличено»','Страница сама найдёт строку с заголовками. Колонка не нашлась — выберите её в списке','Посмотрите результат и нажмите «Скачать … в Excel»']},
+  {table:{h:['Что показывает сверка','Что делать'],r:[
+   ['Есть в банке, нет в АУСН','Доход мог не попасть в кабинет — проверить операцию'],
+   ['Есть в АУСН, нет в банке','Учтено доходом, а поступления нет — проверить'],
+   ['Спорно: учтено доходом','В назначении «займ», «возврат», «собственные средства» — проверить признак'],
+   ['Верно: не доход','Отмечено «не доход», назначение это подтверждает'],
+   ['Проверьте: отмечено не доходом','По назначению похоже на доход — проверить']]}},
+  {note:'Подсказки — предположения по словам в назначении платежа. Окончательно решает бухгалтер, по документам. Правила АУСН и список регионов проверяйте на дату работы.'}]},
+ {h:'Переделать под себя',s:'Агенту — файл страницы, не данные',c:[
+  {p:'Сначала попробуйте без агента: выберите колонки в списках на странице. А слова, по которым страница узнаёт колонки и подозревает «не доход», можно дописать в блоке «НАСТРОЙКИ» в начале файла — обычным текстом.'},
+  {p:'Нужно больше — ещё колонка, поле, другая сводка? Отдайте агенту сам файл страницы. Он в «06-Инструменты», данных клиента в нём нет.'},
+  {prompt:{l:'Запрос: доработать готовую обработку',t:`В этой папке есть страница ofd.html — обработка выгрузки чеков ОФД. Доработай её.
+Колонки в моей выгрузке называются так: [скопируйте названия из первой строки своего файла — только названия, не данные].
+Добавь: [например: вверху поле «Клиент и период» — чтобы оно печаталось над сводкой и попадало в Excel].
+Строку-замок Content-Security-Policy в начале файла не удаляй и не меняй. Ничего не подключай из интернета.
+Мои файлы с данными не открывай и не ищи. Для проверки сам создай тестовый файл на 5 строк с такими колонками и покажи результат.`}},
+  {warn:'Агенту — страница и названия колонок. Строки из выгрузки клиента в запрос не копируем, файл с данными агенту не показываем.'}]}
+ ],
+ hw:{t:'Один инструмент <em>для клиента</em>',tasks:['Выбрать: калькулятор режимов на своих ставках или готовую обработку','Обработку — переделать под выгрузку своего клиента: агенту только страница и колонки','Проверить с выключенным Wi-Fi на обезличенном файле из «03-Обезличено»','Проверить, не синхронизируется ли папка с данными с зарубежным облаком'],done:'итоги сходятся с ручным расчётом, страница работает без интернета, а агент ни разу не видел файл клиента.'}},
+{id:'l4',no:'2.4',block:'Свой первый инструмент',title:'Публикация: ссылка для клиента',
+ can:'понимать, что такое публикация и кто видит опубликованную страницу; отличать, что можно выкладывать, а что нельзя, — и почему форма заявки уже сбор персональных данных; проверить файл по чек-листу и опубликовать свой калькулятор на GitHub Pages — вручную или через агента; обновить страницу и убрать лишнее.',
+ need:['Аккаунт GitHub (из чек-листа модуля 1)','Свой калькулятор из урока 2.2','Отдельная папка, в которой лежит только index.html','Телефон — открыть ссылку'],
+ blocks:[
+ {h:'Что такое публикация',s:'Хостинг, репозиторий и почему всё видно',c:[
+  {p:'Пока файл лежит на вашем диске, он открывается только у вас. Чтобы его открыл любой человек по ссылке, файл должен лежать на компьютере, который включён круглые сутки и подключён к интернету. Такой компьютер называется <b>хостинг</b>.'},
+  {p:'<b>GitHub</b> — хранилище файлов программ, как облачный диск для кода. <b>GitHub Pages</b> — его бесплатная функция: превращает папку в сайт с адресом. Для калькулятора этого хватает с запасом.'},
+  {flow:['Ваш компьютер: index.html','GitHub: репозиторий','Pages: адрес имя.github.io/…','Телефон клиента']},
+  {table:{h:['Слово на экране','По-человечески'],r:[
+   ['Хостинг','Компьютер в интернете, который отдаёт вашу страницу по ссылке'],
+   ['Репозиторий (repository)','Папка проекта на GitHub'],
+   ['Public','Открыт всем. Бесплатные страницы работают только так'],
+   ['Commit changes','«Сохранить». GitHub запоминает каждую версию'],
+   ['Pages','Включатель: превращает папку в сайт с адресом'],
+   ['index.html','Главный файл. Открывается по короткой ссылке']]}},
+  {warn:'Код любой страницы видит каждый посетитель: правая кнопка → «Просмотр кода страницы». Всё, что лежит в файле, — публично. Не только то, что видно на экране, а всё, вплоть до комментариев в коде.'},
+  {p:'Адрес выглядит так: <code>логин.github.io/имя-репозитория</code>. Это ваша вывеска — клиент увидит её в ссылке. Выберите логин и имя, которые не стыдно отправить клиенту: не <code>test123</code>, а, например, <code>kalkulyator</code>.'}]},
+ {h:'Что можно и что нельзя',s:'Тест: ссылку открыли конкурент, клиент и налоговая',c:[
+  {split:[{l:'Можно',ul:['Калькулятор с вашими формулами','Прайс, памятку','Ваши контакты: телефон, почта, сайт — это реклама','Кнопку «Написать мне» в Telegram, WhatsApp, на почту']},{l:'Нельзя',no:1,ul:['Данные клиентов и выгрузки','Ключи API и пароли — даже внутри кода','Обработки из урока 2.3 — они только у вас','Форму «оставьте заявку»','Счётчики посещаемости, чужие виджеты и чаты','Всю рабочую папку — только index.html']}]},
+  {p:'Почему нельзя форму заявки. В момент, когда страница собирает имя и телефон человека, вы становитесь <b>оператором персональных данных</b>. По 152-ФЗ это значит:'},
+  {table:{h:['Что требует закон','Что это значит на практике'],r:[
+   ['Согласие на обработку','С 01.09.2025 — отдельным документом, а не галочкой в общем тексте'],
+   ['Политика обработки данных','Должна быть опубликована на сайте'],
+   ['Уведомление Роскомнадзора','Подаётся до начала обработки'],
+   ['Хранение в России','Формы, собранные агентом за минуту, часто отправляют заявки на зарубежные сервисы']]}},
+  {p:'Вместо формы — кнопка <b>«Написать мне»</b>: ссылка на мессенджер или почту. Клиент сам открывает чат и пишет вам. Страница ничего не собирает — и вопросов нет.'},
+  {note:'Поле «Название клиента» в калькуляторе — не форма. Имя остаётся в браузере клиента и попадает только в PDF, который скачивается к нему на телефон. Никуда не отправляется.'},
+  {warn:'Агенты любят сами добавлять «форму заявки» и «Яндекс Метрику» — потому что «так делают сайты». Проверяйте каждый файл перед публикацией.'},
+  {note:'Здесь простая картина, а не юридическая консультация. Статьи 152-ФЗ (ст. 9, 18.1, 22, 18 ч. 5) и сроки проверяйте на дату работы. Нужен сайт с заявками — это отдельный проект с юристом.'}]},
+ {h:'Чек-лист перед публикацией',s:'Шесть пунктов — каждый раз',c:[
+  {ul:['<b>Персональные данные</b>: ФИО, телефоны, почты, ИНН, счета — кроме ваших контактов','<b>Ключи, пароли, токены</b> — в любом месте кода','<b>Формы и отправка данных</b>: form, fetch, отправка на почту, в Telegram, в таблицу','<b>Обращения в интернет</b>: шрифты, скрипты, счётчики, картинки по ссылкам','<b>Даты у цен и ставок</b>: «действует на…»','<b>Лишнее в комментариях</b>: черновики, заметки, имена клиентов']},
+  {prompt:{l:'Запрос: проверь перед публикацией',t:`Проверь файл index.html в этой папке перед публикацией в интернет. Файл не меняй — только отчёт.
+1. Персональные данные: ФИО, телефоны, почты, ИНН, номера счетов. Мои контакты можно оставить: [мой телефон, почта, сайт] — остальное покажи.
+2. Ключи, пароли, токены — в любом месте кода, включая комментарии.
+3. Формы и отправка данных: form, fetch, отправка на почту, в Telegram, в таблицу.
+4. Обращения в интернет: шрифты, скрипты, счётчики, картинки, виджеты по ссылкам.
+5. Цены и ставки: есть ли рядом дата, на которую они действуют.
+6. Лишнее в комментариях: черновики, заметки, имена клиентов.
+Ответ — таблица: что нашёл, где, что советуешь.`}},
+  {p:'<b>Без агента</b>: откройте страницу → правая кнопка → «Просмотр кода страницы» → поиск (Cmd+F или Ctrl+F) по очереди: <code>+7</code>, <code>@</code>, <code>http</code>, <code>form</code>, <code>key</code>, <code>token</code>. Пять минут — и вы знаете, что публикуете.'},
+  {tree:'AI-калькулятор/\n├── calculator_v11.html\n├── КП_ИП_Иванов.pdf     ← имя клиента: НЕ публикуем\n└── <b>для_сайта/</b>\n    └── index.html        ← публикуем только его'}]},
+ {h:'GitHub Pages вручную',s:'Пять шагов без единой команды',c:[
+  {steps:['github.com → <b>New</b> (новый репозиторий) → имя, например <b>kalkulyator</b>, латиницей → <b>Public</b> → <b>Create repository</b>','В пустом репозитории нажмите ссылку <b>uploading an existing file</b> → перетащите <b>только index.html</b> → <b>Commit changes</b>','<b>Settings</b> → слева <b>Pages</b> → Source: <b>Deploy from a branch</b> → Branch: <b>main</b>, <b>/ (root)</b> → <b>Save</b>','Через 1–2 минуты обновите страницу — вверху появится <b>Your site is live at…</b> и адрес','Откройте ссылку на телефоне и посчитайте пример, который проверяли в 2.2']},
+  {links:['github','pages']},
+  {note:'Файл должен называться <b>index.html</b> — тогда он открывается по короткой ссылке. Хотите адрес без папки — назовите репозиторий ровно <code>логин.github.io</code>.'},
+  {warn:'Проверьте заранее: GitHub → Settings → Emails → галочка <b>Keep my email addresses private</b>. Иначе почта аккаунта может оказаться в истории изменений публичного репозитория.'}]},
+ {h:'Через агента',s:'Claude Code или Codex опубликуют сами',c:[
+  {p:'Агент загружает всё, что видит в папке. Поэтому открывайте его на папке, где лежит <b>только index.html</b>, и пишите это в запросе прямо.'},
+  {prompt:{l:'Запрос: опубликуй',t:`Опубликуй калькулятор на GitHub Pages.
+— Создай публичный репозиторий [kalkulyator] в моём аккаунте GitHub.
+— Загрузи в него ТОЛЬКО файл index.html из этой папки. Других файлов не добавляй.
+— Включи GitHub Pages из ветки main, папка / (root).
+— Перед публикацией проверь файл по чек-листу: персональные данные (кроме моих контактов), ключи и пароли, формы и отправка данных, обращения в интернет. Если что-то нашёл — остановись и спроси меня.
+— Если нужно установить программу или войти в GitHub — сначала объясни, что делает команда, и дождись моего разрешения.
+В конце дай ссылку и напиши, через сколько она заработает.`}},
+  {steps:['Агент предложит установить <b>gh</b> — официальную программу GitHub. Прочитайте команду, разрешите','Агент попросит войти: откроется браузер с кодом. Вход подтверждаете <b>сами</b> — пароль агенту не даём','Агент опубликует и даст ссылку — откройте на телефоне']},
+  {note:'Обновить: «обнови цены на такие-то и опубликуй заново». Без VPN — публикация вручную, шаги выше: GitHub открывается без VPN (проверьте на дату работы).'}]},
+ {h:'Обновить, откатить, удалить',s:'GitHub помнит всё',c:[
+  {p:'GitHub хранит каждую сохранённую версию — вкладка <b>History</b> (иконка часов над файлами). Удобно: можно вернуть вчерашнюю версию. Опасно: удалённый файл остаётся в истории, и её видят все.'},
+  {table:{h:['Ситуация','Что делаем'],r:[
+   ['Поменялись цены или ставки','<b>Add file</b> → <b>Upload files</b> → новый index.html поверх → <b>Commit</b>. Или агенту: «обнови и опубликуй»'],
+   ['По ссылке старая версия','Подождать 2–5 минут, обновить страницу на телефоне'],
+   ['Опубликовали лишний файл','Удалить репозиторий целиком и создать заново — история хранит удалённое'],
+   ['В файл попал ключ','Сразу удалить ключ в кабинете сервиса и выпустить новый. Потом — репозиторий'],
+   ['Калькулятор больше не нужен','Settings → Pages → отключить, или удалить репозиторий']]}},
+  {steps:['Репозиторий → <b>Settings</b>','В самом низу — красная зона <b>Danger Zone</b> → <b>Delete this repository</b>','Введите имя репозитория — так GitHub защищает от случайного удаления → подтвердите']},
+  {quote:'Удалили файл — он в истории. Опубликовали лишнее — удаляем репозиторий.'},
+  {note:'Есть свой сайт? Поставьте на него кнопку «Рассчитать стоимость» со ссылкой на калькулятор.'}]}
+ ],
+ hw:{t:'Ссылка <em>для клиента</em>',tasks:['Пройти чек-лист перед публикацией — с агентом или руками','Опубликовать свой калькулятор на GitHub Pages — только index.html','Проверить галочку Keep my email addresses private','Открыть ссылку на телефоне и отправить её коллеге'],done:'ссылка открывается у человека без доступа к вашему компьютеру, а в коде страницы нет ничего, кроме ваших формул, цен и контактов.'}},
+
+{id:'l5',no:'2.5',block:'Итог',title:'Свой инструмент и упаковка',
+ can:'отличать три вида инструментов и знать, где живёт каждый; выбрать задачу по четырём признакам; заполнить паспорт из девяти строк и собрать по нему инструмент; проверить его и отвечать за расчёт; описать инструмент для клиента без обещаний результата; понимать, как на нём зарабатывать и когда обновлять.',
+ need:['Карта ИИ-задач из модуля 1','Свой КП или регламент работы с клиентом','Ссылка на ваш Telegram или WhatsApp'],
+ blocks:[
+ {h:'Три вида инструментов',s:'От вида зависит, где он живёт',c:[
+  {table:{h:['Вид','Примеры','Где живёт','Данные клиента'],r:[
+   ['<b>Для себя</b>','Сверка банка и АУСН, сводка ОФД, разнесение выписки','Только ваш компьютер, с замком','Есть — поэтому никогда в интернет'],
+   ['<b>Для клиента</b>','Калькулятор услуг, калькулятор режимов, памятка старта','GitHub Pages, ссылка','Нет. Что клиент ввёл — остаётся у него'],
+   ['<b>В обслуживании</b>','Реестр расхождений по АУСН, сводка ОФД за месяц','Инструмент у вас, клиенту — Excel или PDF','Есть — клиент получает только результат']]}},
+  {p:'<b>Хорошая задача</b> для инструмента:'},
+  {ul:['<b>повторяется</b> — каждую неделю, месяц, с каждым новым клиентом;','в ней есть <b>расчёт, файл или список</b>;','<b>ошибка стоит дорого</b> или её долго искать;','<b>правило можно описать</b> словами и проверить на примерах. Не можете объяснить правило сами — агент его не угадает.']},
+  {warn:'Не автоматизируем профессиональное суждение: квалификацию операции, выбор режима «под ключ», ответ налоговой. Инструмент считает и подсказывает — решает бухгалтер.'},
+  {cards:[
+   {h:'Памятка старта работы',p:'Шаги и календарь из вашего КП. Клиент отмечает сделанное и скачивает PDF.'},
+   {h:'Календарь сроков',k:'b',p:'Сроки отчётов и платежей клиента на год. Сроки — ваши, на дату.'},
+   {h:'Калькулятор пеней',k:'t',p:'Сумма и даты — пени. Ставку ЦБ по периодам вводите сами.'},
+   {h:'Отпускные',p:'Средний заработок и сумма. Правила расчёта — ваши, с датой редакции.'}]},
+  {note:'Один инструмент — одна задача. Работает — делайте следующий.'}]},
+ {h:'Паспорт инструмента',s:'Девять строк — ТЗ, проверка и инструкция',c:[
+  {p:'Паспорт — это сразу три вещи: <b>ТЗ для агента</b>, <b>проверка безопасности</b> (по строкам «данные клиента» и «где живёт» видно, можно ли публиковать) и <b>инструкция для вас</b> через полгода.'},
+  {prompt:{l:'Паспорт инструмента',t:`Задача: [что инструмент делает — одной фразой]
+Для кого: [я / клиент / сотрудник]
+Вход: [какие поля или какой файл]
+Выход: [что получаем: расчёт, сводка, документ]
+Правила и ставки: [откуда берём и на какую дату — только мои]
+Данные клиента: [есть ли персональные данные; если есть — только мой компьютер, с замком]
+Где живёт: [мой компьютер / ссылка в интернете]
+Проверка: [3–8 примеров с ответом, посчитанных вручную]
+Когда обновлять: [1 января, новый прайс, изменения НК…]`}},
+  {table:{h:['Пример: калькулятор услуг',''],r:[
+   ['Задача','Считает стоимость сопровождения и собирает КП в PDF'],
+   ['Для кого','Будущий клиент, по ссылке с телефона'],
+   ['Вход','Форма бизнеса, режим, сотрудники, кассы, эквайринг, доп. счета, услуги из прайса; название клиента — для шапки КП'],
+   ['Выход','Итог в месяц, разовые услуги отдельно, КП в PDF'],
+   ['Правила и ставки','Только свой прайс на текущий год'],
+   ['Данные клиента','Название остаётся в браузере, ничего не отправляется'],
+   ['Где живёт','GitHub Pages'],
+   ['Проверка','8 примеров, посчитанных вручную'],
+   ['Когда обновлять','Новый прайс; изменения режимов с 1 января']]}}]},
+ {h:'Собираем по паспорту',s:'Памятка «Как мы начинаем работу»',c:[
+  {p:'Порядок начала работы есть у каждого бухгалтера на аутсорсе — в КП, договоре или регламенте. Каждый новый клиент спрашивает одно и то же. Сделаем ему памятку по ссылке: шаги с галочками, календарь на месяц и PDF.'},
+  {prompt:{l:'Запрос: памятка старта по паспорту',t:`Сделай в этой папке страницу start.html. Вот паспорт:
+Задача: памятка для нового клиента «Как мы начинаем работу» — клиент видит шаги, отмечает сделанные и сохраняет памятку в PDF.
+Для кого: мой новый клиент, открывает по ссылке с телефона.
+Вход: галочки у шагов; поле «Название компании» — только для шапки PDF.
+Выход: список шагов с отметками; календарь на месяц «что, от кого кому, каким способом, какого числа»; кнопка «Скачать памятку в PDF»; кнопка «Написать мне» — [ссылка на Telegram или WhatsApp].
+Правила и тексты: шаги и календарь — из [мой КП / договор / регламент] в этой папке. Тексты не придумывай и не дополняй. Если чего-то не хватает — спроси меня.
+Данные клиента: страница ничего не отправляет и не сохраняет. Никаких форм, счётчиков и подключений из интернета.
+Где живёт: GitHub Pages, публичная ссылка.
+Проверка: отметь шаги 1 и 2 — в PDF они отмечены; на телефоне всё помещается.
+Когда обновлять: при изменении договора или регламента. Внизу мелко — «Версия от [дата]».
+Оформление: [мои цвета, шрифты, logo.png из этой папки].`}},
+  {note:'В папку агента кладём только свой документ — КП или регламент. Договоры с клиентами и их документы туда не кладём.'},
+  {p:'<b>Без VPN:</b> чат не видит папку — вставьте шаги и календарь в запрос текстом, готовый код сохраните как start.html.'}]},
+ {h:'Проверки и ответственность',s:'Отвечает тот, чьё имя на странице',c:[
+  {table:{h:['Проверка','Что делаем','Если не прошла'],r:[
+   ['Контрольные примеры','Запрос 5.2 на своих 3–8 примерах','Ищем, где ошибка: в формуле или в примере'],
+   ['«Дурацкий ввод»','Буквы, пустое поле, ноль, минус, очень большое число','«Если ввели не число — покажи подсказку»'],
+   ['Телефон','Открыть ссылку, нажать все кнопки, скачать PDF','«Сделай удобно на телефоне»'],
+   ['Перед публикацией','Чек-лист из урока 2.4','Убираем лишнее, проверяем заново'],
+   ['Пометки','Дата ставок, «оценка, не консультация», контакты','Добавляем словами']]}},
+  {pk:'5.2'},
+  {warn:'Клиент не знает, кто писал код, — он видит ваше имя. Ошибка калькулятора — ваша ошибка. Поэтому примеры считаем сами, до инструмента.'}]},
+ {h:'Упаковка и продажа',s:'Три строки и три способа',c:[
+  {prompt:{l:'Описание для клиента',t:'Напиши описание моего инструмента для клиентов: три коротких строки — что делает, кому полезно, что делать дальше (написать мне). Без канцелярита. Без обещаний результата, экономии и процентов — только то, что инструмент действительно делает. Инструмент: [паспорт].'}},
+  {pk:'2.5',l:'Затем — без канцелярита'},
+  {split:[{l:'Так пишем',ul:['Покажет примерную нагрузку на трёх режимах','Посчитает стоимость обслуживания по моему прайсу','Напомнит, что и когда прислать бухгалтеру']},{l:'Так не пишем',no:1,ul:['Сэкономит до 30% налогов','Точный расчёт за минуту','Заменит бухгалтера']}]},
+  {note:'Описание и пост — тоже реклама, а реклама по закону должна быть достоверной. Цифры экономии без расчёта на конкретном клиенте не пишем.'},
+  {table:{h:['Способ','Пример','Как работает'],r:[
+   ['Бесплатный вход к разговору','Калькулятор услуг, калькулятор режимов','Клиент посчитал сам — пишет вам с конкретным вопросом'],
+   ['Ценность в обслуживании','Сверка АУСН каждый месяц, сводка ОФД, памятка старта','Вы делаете быстрее и точнее; в КП это строка базового тарифа, а не скидка'],
+   ['Консультация по результатам','Калькулятор режимов → «разберём ваш случай»','Расчёт — бесплатно, разбор с документами — по вашему прайсу']]}},
+  {ul:['Подпись письма','Шапка профиля в соцсетях','Сайт — кнопка «Рассчитать стоимость»','Ответ на частый вопрос «сколько стоит»','Пост: «посчитайте сами»']},
+  {quote:'Калькулятор — бесплатно. Услуга — консультация по результатам.'}]},
+ {h:'Сопровождение',s:'Сделал — не значит забыл',c:[
+  {table:{h:['Когда','Что обновить'],r:[
+   ['1 января','Ставки, лимиты, взносы — калькуляторы режимов, пеней, отпускных'],
+   ['Новый прайс','Калькулятор услуг и КП'],
+   ['Изменения НК в течение года','Все расчётные инструменты'],
+   ['Банк или ОФД сменили выгрузку','Обработки: выбрать колонки в списках или доработать'],
+   ['Изменился договор или регламент','Памятка старта']]}},
+  {p:'Внизу каждой страницы — <b>«Версия от [дата]»</b>. Паспорт храните рядом с файлом у себя, в интернет публикуем только index.html.'}]}
+ ],
+ hw:{t:'Итог <em>модуля</em>',tasks:['Выбрать задачу по четырём признакам','Заполнить паспорт из девяти строк','Собрать инструмент по паспорту и пройти проверки','Для клиента — опубликовать и написать описание в три строки; для себя — проверить с выключенным Wi-Fi'],done:'есть паспорт и инструмент — ссылка или файл. Черновик — на встречу 27.11, итог — до 30.11.'},
+ ready:['Выбран путь: Claude Code, Codex или без VPN','Папка «Курс_ИИ/06-Инструменты» с инструментами модуля','Аккаунт GitHub, опубликован хотя бы один инструмент','Паспорт своего инструмента заполнен']}
+];
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store = {get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+const link = k => `<a class="go" href="${L[k].u}" target="_blank" rel="noopener">${esc(L[k].t)}</a>`;
+const cell = v => typeof v==='string' && v[0]==='@' ? link(v.slice(1)) : v;
+let view = '';
+
+function piece(x){
+  if(x.p) return `<p>${x.p}</p>`;
+  if(x.ul) return `<ul>${x.ul.map(i=>`<li>${i}</li>`).join('')}</ul>`;
+  if(x.steps) return `<ol class="steps">${x.steps.map(i=>`<li><span>${i}</span></li>`).join('')}</ol>`;
+  if(x.quote) return `<p class="quote">«${esc(x.quote)}»</p>`;
+  if(x.note) return `<div class="note"><div class="nl">Подсказка</div><p>${x.note}</p></div>`;
+  if(x.warn) return `<div class="note t"><div class="nl">Важно</div><p>${x.warn}</p></div>`;
+  if(x.tree) return `<div class="tree">${x.tree}</div>`;
+  if(x.flow) return `<div class="flowline">${x.flow.map((f,i)=>`${i?'<i>→</i>':''}<span class="${i===x.flow.length-1?'acc':''}">${esc(f)}</span>`).join('')}</div>`;
+  if(x.links) return `<div class="links">${x.links.map(link).join('')}</div>`;
+  if(x.cards) return `<div class="cards">${x.cards.map(c=>`<div class="card ${c.k||''}">${c.tag?`<span class="tag ${c.tag}">${esc(c.tg)}</span>`:''}<h4>${esc(c.h)}</h4><p>${c.p}</p>${c.go?link(c.go):''}</div>`).join('')}</div>`;
+  if(x.split) return `<div class="split">${x.split.map(s=>`<div><div class="sl ${s.no?'no':''}">${esc(s.l)}</div><ul>${s.ul.map(i=>`<li>${i}</li>`).join('')}</ul></div>`).join('')}</div>`;
+  if(x.table) return `<div class="tw"><table><thead><tr>${x.table.h.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${x.table.r.map(r=>`<tr>${r.map(c=>`<td>${cell(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  if(x.tabs){ const ks=Object.keys(x.tabs); return `<div class="tabs" data-tabs><div class="tl" role="tablist">${ks.map((k,i)=>`<button role="tab" aria-selected="${i===0}" data-k="${i}">${esc(k)}</button>`).join('')}</div>${ks.map((k,i)=>`<div class="tp" data-p="${i}" ${i?'hidden':''}>${x.tabs[k]}</div>`).join('')}</div>`; }
+  if(x.prompt) return promptBox(x.prompt.l, x.prompt.t, '');
+  if(x.pk) return promptBox(x.l || ('Библиотека · запрос '+x.pk), P[x.pk], 't');
+  if(x.reveal) return `<div class="reveal"><button type="button" data-reveal>${esc(x.reveal.q)}</button><p class="ans" hidden>${x.reveal.a}</p></div>`;
+  return '';
+}
+const promptBox = (l,t,cls) => `<div class="prompt"><div class="ph"><span class="${cls}">${esc(l)}</span><button type="button" data-copy>Копировать</button></div><pre>${esc(t)}</pre></div>`;
+function checklist(items,key){
+  const s=store.get(key,{});
+  return `<ul class="check">${items.map((t,i)=>`<li><label><input type="checkbox" id="${key}-${i}" data-k="${key}" data-i="${i}" ${s[i]?'checked':''}><span>${esc(t)}</span></label></li>`).join('')}</ul>`;
+}
+
+function renderToc(){
+  const done=store.get('m2-done',{});
+  let h='', b='';
+  LESSONS.forEach(l=>{
+    if(l.block!==b){ b=l.block; h+=`<div class="sep">${esc(b)}</div>`; }
+    h+=`<button data-v="${l.id}" aria-current="${l.id===view}"><span class="no">${l.no}</span><span class="nm">${esc(l.title)}</span><span class="ok ${done[l.id]?'on':''}" aria-label="${done[l.id]?'пройден':'не пройден'}"></span></button>`;
+  });
+  $('#toc').innerHTML=h;
+  $('#toc').querySelectorAll('button').forEach(x=>x.onclick=()=>{ location.hash=x.dataset.v; });
+  const n=Object.values(done).filter(Boolean).length;
+  $('#mCount').textContent=`${n} из ${LESSONS.length}`;
+  $('#mBar').style.width=(n/LESSONS.length*100)+'%';
+}
+function titleHTML(t){ const m=t.match(/^(.*?)(\S+)$/); return m?esc(m[1])+'<em>'+esc(m[2])+'</em>':esc(t); }
+
+function renderLesson(l){
+  const idx=LESSONS.indexOf(l), done=store.get('m2-done',{}), open=store.get('m2-open-'+l.id,[0]);
+  const blocks=l.blocks.map((b,i)=>`<section class="blk ${open.includes(i)?'open':''}" style="--i:${i}" data-b="${i}">
+    <button class="bh" type="button" aria-expanded="${open.includes(i)}"><span class="bn">${String(i+1).padStart(2,'0')}</span><span><h3>${esc(b.h)}</h3><small>${esc(b.s)}</small></span><span class="pm" aria-hidden="true"></span></button>
+    <div class="bb">${b.c.map(piece).join('')}</div></section>`).join('');
+  const prev = idx>0?`<button class="btn" data-go="${LESSONS[idx-1].id}">← Урок ${LESSONS[idx-1].no}</button>`:'<span></span>';
+  const next = idx<LESSONS.length-1?`<button class="btn primary" data-go="${LESSONS[idx+1].id}">Урок ${LESSONS[idx+1].no} →</button>`:'<span></span>';
+  $('#main').innerHTML=`
+  <div class="lh">
+    <div class="rubrics"><span class="rubric t">Урок ${l.no}</span><span class="rubric b">${esc(l.block)}</span></div>
+    <h2>${titleHTML(l.title)}</h2>
+    <p class="can"><b>После урока вы сможете</b> ${esc(l.can)}</p>
+    <div class="need"><span>Понадобится:</span>${l.need.map(n=>`<span class="chip">${esc(n)}</span>`).join('')}</div>
+    <div class="tools"><button class="tbtn" id="openAll" type="button">Раскрыть все блоки</button><button class="tbtn" id="closeAll" type="button">Свернуть</button></div>
+  </div>
+  <div class="blocks">${blocks}</div>
+  <section class="hw"><div class="rubrics" style="margin:0"><span class="rubric t">Задание к уроку ${l.no}</span></div>
+    <h3>${l.hw.t}</h3>${checklist(l.hw.tasks,'hw-'+l.id)}
+    <p class="donebox"><b>Готово, если</b> ${esc(l.hw.done)}</p>
+    ${l.ready?`<h3>Итог <em>модуля</em></h3><p>Проверьте перед модулем 3.</p>${checklist(l.ready,'ready')}`:''}
+    <button class="finish ${done[l.id]?'on':''}" id="finish" type="button">${done[l.id]?'Урок пройден ✓':'Отметить урок пройденным'}</button>
+  </section>
+  <div class="pager">${prev}${next}</div>`;
+  bind(l);
+}
+function bind(l){
+  const saveOpen=()=>store.set('m2-open-'+l.id,[...document.querySelectorAll('.blk.open')].map(b=>+b.dataset.b));
+  document.querySelectorAll('.blk .bh').forEach(h=>h.onclick=()=>{ const b=h.parentElement; b.classList.toggle('open'); h.setAttribute('aria-expanded',b.classList.contains('open')); saveOpen(); });
+  $('#openAll').onclick=()=>{ document.querySelectorAll('.blk').forEach(b=>{b.classList.add('open');b.querySelector('.bh').setAttribute('aria-expanded','true');}); saveOpen(); };
+  $('#closeAll').onclick=()=>{ document.querySelectorAll('.blk').forEach(b=>{b.classList.remove('open');b.querySelector('.bh').setAttribute('aria-expanded','false');}); saveOpen(); };
+  document.querySelectorAll('[data-tabs]').forEach(box=>box.querySelectorAll('[role=tab]').forEach(t=>t.onclick=()=>{
+    box.querySelectorAll('[role=tab]').forEach(x=>x.setAttribute('aria-selected',x===t));
+    box.querySelectorAll('.tp').forEach(p=>p.hidden=p.dataset.p!==t.dataset.k);
+  }));
+  document.querySelectorAll('[data-reveal]').forEach(b=>b.onclick=()=>{ const a=b.nextElementSibling; a.hidden=!a.hidden; b.textContent=a.hidden?b.textContent.replace('Скрыть','Показать'):b.textContent.replace('Показать','Скрыть'); });
+  document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{
+    const pre=b.closest('.prompt').querySelector('pre');
+    const ok=()=>{ b.textContent='Скопировано'; b.classList.add('done'); setTimeout(()=>{b.textContent='Копировать';b.classList.remove('done');},1600); };
+    const fb=()=>{ const r=document.createRange(); r.selectNodeContents(pre); const s=getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent='Выделено — Cmd/Ctrl+C'; };
+    try{ navigator.clipboard.writeText(pre.textContent).then(ok,fb); }catch(e){ fb(); }
+  });
+  document.querySelectorAll('input[data-k]').forEach(cb=>cb.onchange=()=>{ const k=cb.dataset.k,s=store.get(k,{}); s[cb.dataset.i]=cb.checked; store.set(k,s); });
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ location.hash=b.dataset.go; });
+  $('#finish').onclick=()=>{ const d=store.get('m2-done',{}); d[l.id]=!d[l.id]; store.set('m2-done',d); renderToc(); const f=$('#finish'); f.classList.toggle('on',d[l.id]); f.textContent=d[l.id]?'Урок пройден ✓':'Отметить урок пройденным'; };
+}
+function route(e){
+  const h=(location.hash||'').slice(1);
+  view = LESSONS.some(l=>l.id===h) ? h : store.get('m2-view','l1');
+  if(!LESSONS.some(l=>l.id===view)) view='l1';
+  store.set('m2-view',view);
+  renderToc(); renderLesson(LESSONS.find(l=>l.id===view));
+  if(e) document.querySelector('.grid').scrollIntoView({block:'start'});
+}
+window.addEventListener('hashchange',route);
+route();
+
+/* ---------- скачивание готовых файлов ----------
+   В просмотрщике claude.ai — через его окно сохранения; на обычном сайте — простая ссылка. */
+let DL=null;
+if(window.claude && typeof window.claude.use==='function') window.claude.use('downloads').then(d=>{DL=d;}).catch(()=>{});
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a[download]'); if(!a||!DL) return;
+  e.preventDefault();
+  fetch(a.getAttribute('href')).then(r=>{ if(!r.ok) throw {code:'unavailable'}; return r.blob(); })
+    .then(b=>DL.save({filename:a.getAttribute('download'),data:b}))
+    .catch(err=>{ if(err&&(err.code==='declined')) return; window.open(a.href,'_blank','noopener'); });
+});
+</script>
+
+</body>
+</html>
